@@ -3,9 +3,9 @@ import httpStatus from 'http-status';
 import { UserService } from './user.service';
 import sendResponse from '../../../shared/sendResponse';
 import { IUser } from './user.interface';
-import createAsync from '../../../shared/catchAsync';
+import catchAsync from '../../../shared/catchAsync';
 
-const createUser: RequestHandler = createAsync(
+const createUser: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { user } = req.body;
     // console.log("test user",user);

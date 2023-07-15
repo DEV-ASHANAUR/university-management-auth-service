@@ -1,6 +1,6 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 
-const createAsync =
+const catchAsync =
   (fn: RequestHandler) =>
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -9,4 +9,4 @@ const createAsync =
       next(error);
     }
   };
-export default createAsync;
+export default catchAsync;

@@ -6,7 +6,7 @@ const validateRequest =
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       await schema.parseAsync({
-        body: req.body.user,
+        body: req.body,
         query: req.query,
         params: req.params,
         cookie: req.cookies,
