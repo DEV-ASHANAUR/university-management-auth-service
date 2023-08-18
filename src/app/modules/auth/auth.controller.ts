@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import config from '../../../config';
 import sendResponse from '../../../shared/sendResponse';
 import { ILoginUserResponse, IRefreshTokenResponse } from './auth.interface';
+import httpStatus from 'http-status';
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
   const { ...loginData } = req.body;
@@ -29,7 +30,6 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 
 const refreshToken = catchAsync(async (req: Request, res: Response) => {
   const { refreshToken } = req.cookies;
-
   const result = await AuthService.refreshToken(refreshToken);
 
   //set refresh token
@@ -49,7 +49,21 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const changePassword = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user;
+  const { ...passwordData } = req.body;
+
+  await AuthService.changePassword(user, passwordData);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Password changed successFully',
+  });
+});
+
 export const AuthController = {
   loginUser,
   refreshToken,
+  changePassword,
 };
