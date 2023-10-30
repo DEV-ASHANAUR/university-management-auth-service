@@ -169,7 +169,7 @@ const createAdmin = async (
   // set role
   user.role = 'admin';
 
-  // generate faculty id
+  // generate admin id
   let newUserAllData = null;
   const session = await mongoose.startSession();
   try {
@@ -182,7 +182,7 @@ const createAdmin = async (
     const newAdmin = await Admin.create([admin], { session });
 
     if (!newAdmin.length) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'Failed to create faculty ');
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Failed to create admin ');
     }
 
     user.admin = newAdmin[0]._id;
