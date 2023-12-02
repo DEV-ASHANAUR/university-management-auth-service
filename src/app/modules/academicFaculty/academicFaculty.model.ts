@@ -16,6 +16,11 @@ const AcademiicFacultySchema = new Schema<
       required: true,
       unique: true,
     },
+    syncId: {
+      type: String,
+      required: false,
+      unique: true,
+    },
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );
