@@ -4,12 +4,16 @@ import mongoose, { SortOrder } from 'mongoose';
 import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { IGenericResponse } from '../../../interfaces/common';
 import { IPaginationOptions } from '../../../interfaces/pagination';
-import { facultySearchableFields } from './faculty.constant';
+import {
+  EVENT_FACULTY_UPDATED,
+  facultySearchableFields,
+} from './faculty.constant';
 import { IFaculty, IFacultyFilters } from './faculty.interface';
 import { Faculty } from './faculty.model';
 import ApiError from '../../../errors/ApiError';
 import httpStatus from 'http-status';
 import { User } from '../user/user.model';
+import { RedisClient } from '../../../shared/redis';
 
 const getAllFaculties = async (
   filters: IFacultyFilters,
@@ -96,6 +100,11 @@ const updateFaculty = async (
   const result = await Faculty.findOneAndUpdate({ id }, updatedFacultyData, {
     new: true,
   });
+
+  if (result) {
+    await RedisClient.publish(EVENT_FACULTY_UPDATED, JSON.stringify(result));
+  }
+
   return result;
 };
 
