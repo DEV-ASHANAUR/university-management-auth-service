@@ -4,11 +4,15 @@ import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { IGenericResponse } from '../../../interfaces/common';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import { IStudent, IStudentFilters } from './student.interface';
-import { studentSearchableFields } from './student.constant';
+import {
+  EVENT_STUDENT_UPDATED,
+  studentSearchableFields,
+} from './student.constant';
 import { Student } from './student.model';
 import ApiError from '../../../errors/ApiError';
 import httpStatus from 'http-status';
 import { User } from '../user/user.model';
+import { RedisClient } from '../../../shared/redis';
 
 const getAllStudents = async (
   filters: IStudentFilters,
@@ -113,6 +117,10 @@ const updateStudent = async (
   const result = await Student.findOneAndUpdate({ id }, updatedStudentData, {
     new: true,
   });
+
+  if (result) {
+    await RedisClient.publish(EVENT_STUDENT_UPDATED, JSON.stringify(result));
+  }
 
   return result;
 };
