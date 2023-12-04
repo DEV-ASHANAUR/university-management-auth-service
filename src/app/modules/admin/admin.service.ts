@@ -66,7 +66,7 @@ const getAllAdmins = async (
 };
 
 const getSingleAdmin = async (id: string): Promise<IAdmin | null> => {
-  const result = await Admin.findOne({ id }).populate('ManagementDepartment');
+  const result = await Admin.findOne({ id }).populate('managementDepartment');
   return result;
 };
 
@@ -109,17 +109,17 @@ const deleteAdmin = async (id: string): Promise<IAdmin | null> => {
 
   try {
     session.startTransaction();
-    //delete student first
-    const student = await Admin.findOneAndDelete({ id }, { session });
-    if (!student) {
-      throw new ApiError(404, 'Failed to delete student');
+    //delete admin first
+    const admin = await Admin.findOneAndDelete({ id }, { session });
+    if (!admin) {
+      throw new ApiError(404, 'Failed to delete admin!');
     }
     //delete user
     await User.deleteOne({ id });
     await session.commitTransaction();
     await session.endSession();
 
-    return student;
+    return admin;
   } catch (error) {
     await session.abortTransaction();
     await session.endSession();
