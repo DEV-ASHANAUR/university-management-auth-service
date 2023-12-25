@@ -1,4 +1,6 @@
 import jwt, { Secret, JwtPayload } from 'jsonwebtoken';
+import ApiError from '../errors/ApiError';
+import httpStatus from 'http-status';
 
 const createToken = (
   payload: Record<string, unknown>,
@@ -11,7 +13,11 @@ const createToken = (
 };
 
 const verifyToken = (token: string, secret: Secret): JwtPayload => {
-  return jwt.verify(token, secret) as JwtPayload;
+  try {
+    return jwt.verify(token, secret) as JwtPayload;
+  } catch (error) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid token');
+  }
 };
 
 export const jwtHelpers = {

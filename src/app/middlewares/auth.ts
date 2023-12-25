@@ -19,6 +19,10 @@ const auth =
 
       verifiedUser = jwtHelpers.verifyToken(token, config.jwt.secret as Secret);
 
+      if (!verifiedUser) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, 'Unauthorized');
+      }
+
       req.user = verifiedUser; // role , userid
 
       // role diye guard korar jnno
