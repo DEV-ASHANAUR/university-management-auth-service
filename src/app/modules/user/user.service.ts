@@ -145,9 +145,27 @@ const createFaculty = async (
 
     await session.commitTransaction();
     await session.endSession();
-  } catch (error) {
+  } catch (error: any) {
     await session.abortTransaction();
     await session.endSession();
+
+    // Handle unique constraint violation
+    if (error.code === 11000) {
+      if (error.keyPattern.id) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Faculty ID must be unique.'
+        );
+      } else if (error.keyPattern.email) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Email must be unique.');
+      } else if (error.keyPattern.contactNo) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Contact number must be unique.'
+        );
+      }
+    }
+
     throw error;
   }
 

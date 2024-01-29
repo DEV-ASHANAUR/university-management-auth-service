@@ -5,6 +5,7 @@ import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { IGenericResponse } from '../../../interfaces/common';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import {
+  EVENT_FACULTY_DELETED,
   EVENT_FACULTY_UPDATED,
   facultySearchableFields,
 } from './faculty.constant';
@@ -80,7 +81,7 @@ const getSingleFaculty = async (id: string): Promise<IFaculty | null> => {
 const updateFaculty = async (
   id: string,
   payload: Partial<IFaculty>
-): Promise<IFaculty | null> => {
+): Promise<any> => {
   const isExist = await Faculty.findOne({ id });
 
   if (!isExist) {
@@ -100,12 +101,28 @@ const updateFaculty = async (
   const result = await Faculty.findOneAndUpdate({ id }, updatedFacultyData, {
     new: true,
   });
-
+  let populateData = null;
   if (result) {
-    await RedisClient.publish(EVENT_FACULTY_UPDATED, JSON.stringify(result));
+    populateData = await User.findOne({ id: result.id }).populate({
+      path: 'faculty',
+      populate: [
+        {
+          path: 'academicDepartment',
+        },
+        {
+          path: 'academicFaculty',
+        },
+      ],
+    });
   }
 
-  return result;
+  if (populateData) {
+    await RedisClient.publish(
+      EVENT_FACULTY_UPDATED,
+      JSON.stringify(populateData)
+    );
+  }
+  return populateData;
 };
 
 const deleteFaculty = async (id: string): Promise<IFaculty | null> => {
@@ -124,6 +141,9 @@ const deleteFaculty = async (id: string): Promise<IFaculty | null> => {
     const faculty = await Faculty.findOneAndDelete({ id }, { session });
     if (!faculty) {
       throw new ApiError(404, 'Failed to delete student');
+    }
+    if (faculty) {
+      await RedisClient.publish(EVENT_FACULTY_DELETED, JSON.stringify(faculty));
     }
     //delete user
     await User.deleteOne({ id });
