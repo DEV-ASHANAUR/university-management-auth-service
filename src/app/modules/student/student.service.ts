@@ -5,6 +5,7 @@ import { IGenericResponse } from '../../../interfaces/common';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import { IStudent, IStudentFilters } from './student.interface';
 import {
+  EVENT_STUDENT_DELETED,
   EVENT_STUDENT_UPDATED,
   studentSearchableFields,
 } from './student.constant';
@@ -82,7 +83,7 @@ const getSingleStudent = async (id: string): Promise<IStudent | null> => {
 const updateStudent = async (
   id: string,
   payload: Partial<IStudent>
-): Promise<IStudent | null> => {
+): Promise<any> => {
   const isExit = await Student.findOne({ id });
 
   if (!isExit) {
@@ -117,12 +118,32 @@ const updateStudent = async (
   const result = await Student.findOneAndUpdate({ id }, updatedStudentData, {
     new: true,
   });
-
+  let populateData = null;
   if (result) {
-    await RedisClient.publish(EVENT_STUDENT_UPDATED, JSON.stringify(result));
+    populateData = await User.findOne({ id: result.id }).populate({
+      path: 'student',
+      populate: [
+        {
+          path: 'academicSemester',
+        },
+        {
+          path: 'academicDepartment',
+        },
+        {
+          path: 'academicFaculty',
+        },
+      ],
+    });
   }
 
-  return result;
+  if (populateData) {
+    await RedisClient.publish(
+      EVENT_STUDENT_UPDATED,
+      JSON.stringify(populateData)
+    );
+  }
+
+  return populateData;
 };
 
 const deleteStudent = async (id: string): Promise<IStudent | null> => {
@@ -145,6 +166,9 @@ const deleteStudent = async (id: string): Promise<IStudent | null> => {
     await User.deleteOne({ id });
     await session.commitTransaction();
     await session.endSession();
+    if (student) {
+      await RedisClient.publish(EVENT_STUDENT_DELETED, JSON.stringify(student));
+    }
     return student;
   } catch (error) {
     await session.abortTransaction();
