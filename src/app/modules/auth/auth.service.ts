@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from 'http-status';
 import ApiError from '../../../errors/ApiError';
 import {
@@ -6,10 +7,16 @@ import {
   ILoginUserResponse,
   IRefreshTokenResponse,
 } from './auth.interface';
+import bcrypt from 'bcrypt';
 import { User } from '../user/user.model';
 import { jwtHelpers } from '../../../helpers/jwtHelpers';
 import config from '../../../config';
 import { JwtPayload, Secret } from 'jsonwebtoken';
+import { ENUM_USER_ROLE } from '../../../enums/user';
+import { Admin } from '../admin/admin.model';
+import { Faculty } from '../faculty/faculty.model';
+import { Student } from '../student/student.model';
+import { sendEMail } from './sendResetMail';
 
 const loginUser = async (payload: ILoginUser): Promise<ILoginUserResponse> => {
   const { id, password } = payload;
@@ -110,8 +117,75 @@ const changePassword = async (
   isUserExist.save();
 };
 
+const forgotPass = async (payload: { id: string }) => {
+  const user: any = await User.findOne({ id: payload.id }, { id: 1, role: 1 });
+  if (!user) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'User not found!');
+  }
+
+  let profile = null;
+  if (user.role === ENUM_USER_ROLE.ADMIN) {
+    profile = await Admin.findOne({ id: user.id });
+  } else if (user.role === ENUM_USER_ROLE.FACULTY) {
+    profile = await Faculty.findOne({ id: user.id });
+  } else if (user.role === ENUM_USER_ROLE.STUDENT) {
+    profile = await Student.findOne({ id: user.id });
+  }
+
+  if (!profile) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Profile not Found');
+  }
+
+  const passResetToken = await jwtHelpers.createResetToken(
+    { id: user.id },
+    config.jwt.secret as string,
+    '50m'
+  );
+
+  const resetLink: string =
+    config.resetlink + `id=${user.id}&token=${passResetToken}`;
+
+  await sendEMail(
+    profile.email,
+    `
+      <div>
+        <p>Hi, ${profile.name.firstName}</p>
+        <p>Your password reset link: <a href=${resetLink}>Click Here</a></p>
+        <p>Thank you</p>
+      </div>
+  `
+  );
+};
+
+const resetPassword = async (
+  payload: { id: string; newPassword: string },
+  token: string
+) => {
+  const { id, newPassword } = payload;
+  const user = await User.findOne({ id }, { id: 1 });
+  if (!user) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'User not found!');
+  }
+  const isVarified = await jwtHelpers.verifyToken(
+    token,
+    config.jwt.secret as string
+  );
+
+  if (!isVarified) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invaild reset password token!');
+  }
+
+  const password = await bcrypt.hash(
+    newPassword,
+    Number(config.bycript_salt_rounds)
+  );
+  await User.updateOne({ id }, { password });
+};
+
 export const AuthService = {
   loginUser,
   changePassword,
   refreshToken,
+  forgotPass,
+  resetPassword,
 };
