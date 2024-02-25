@@ -166,14 +166,11 @@ const resetPassword = async (
   if (!user) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'User not found!');
   }
-  const isVarified = await jwtHelpers.verifyToken(
-    token,
-    config.jwt.secret as string
-  );
+  await jwtHelpers.verifyToken(token, config.jwt.secret as string);
 
-  if (!isVarified) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Invaild reset password token!');
-  }
+  // if (!isVarified) {
+  //   throw new ApiError(httpStatus.BAD_REQUEST, 'Invaild reset password token!');
+  // }
 
   const password = await bcrypt.hash(
     newPassword,

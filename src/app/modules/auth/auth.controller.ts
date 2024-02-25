@@ -34,12 +34,12 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 
   //set refresh token
 
-  const cookieOptions = {
-    secure: config.env === 'production',
-    httpOnly: true,
-  };
+  // const cookieOptions = {
+  //   secure: config.env === 'production',
+  //   httpOnly: true,
+  // };
 
-  res.cookie('refreshToken', refreshToken, cookieOptions);
+  // res.cookie('refreshToken', refreshToken, cookieOptions);
 
   sendResponse<IRefreshTokenResponse>(res, {
     statusCode: 200,
